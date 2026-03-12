@@ -13,8 +13,8 @@
 
 ## 💻 실습 환경
 
-* **OS:** macOS
-* **도구:** Docker Desktop, Kubernetes
+* **OS:** ubuntu
+* **도구:** Docker, Kubernetes
 
 ## 🗓️ 주차별 학습 및 실습 기록
 
