@@ -10,10 +10,17 @@
 # 1. 패키지 인덱스 업데이트 및 필수 패키지 설치
 sudo apt-get update
 sudo apt-get install -y ca-certificates curl gnupg
+```
+<img width="1000" height="451" alt="image" src="https://github.com/user-attachments/assets/fda4ab00-bbc1-4d88-89cb-8569316b8bbb" />
+<img width="1000" height="451" alt="image" src="https://github.com/user-attachments/assets/40d44eef-5e4a-4890-81be-b3f857e16279" />
 
+```bash
 # 2. 기존 구버전 도커 패키지 제거 (기존에 도커가 설치되어 있었다면 꼭 제거할 것)
 sudo apt-get remove -y docker docker-engine docker.io containerd runc || true
+```
+<img width="1000" height="143" alt="image" src="https://github.com/user-attachments/assets/d3624711-9970-472c-9470-13b6c8030e61" />
 
+```bash
 # 3. Docker 공식 GPG 키 등록 및 저장소 추가
 sudo install -m 0755 -d /etc/apt/keyrings
 
@@ -22,23 +29,38 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o 
 sudo chmod a+r /etc/apt/keyrings/docker.gpg
 
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+```
+<img width="1000" height="143" alt="image" src="https://github.com/user-attachments/assets/60d3ccb9-2f08-4774-b778-438996612dad" />
 
+```bash
 # 4. 도커 엔진 설치
 sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+<img width="1000" height="186" alt="image" src="https://github.com/user-attachments/assets/48c21624-4213-41b4-acc0-0597fc6f0cef" />
+<img width="1000" height="454" alt="image" src="https://github.com/user-attachments/assets/eb926801-3dc6-4b8b-a31c-b93352e35b20" />
 
+```bash
 # 5. 설치 확인 
 docker --version
 sudo docker run --rm hello-world
+```
+<img width="1000" height="46" alt="image" src="https://github.com/user-attachments/assets/534175ed-f341-47e9-9b5c-8ee239106bda" />
+<img width="1000" height="453" alt="image" src="https://github.com/user-attachments/assets/cfacf4a2-3532-4b40-a5ce-39c27be2b84b" />
 
+```bash
 # 6. 현재 사용자에게 docker 그룹 권한 부여 (이후 sudo 생략 가능)
 sudo usermod -aG docker $USER
 newgrp docker
+```
+<img width="1000" height="68" alt="image" src="https://github.com/user-attachments/assets/365c9ee2-2cfb-4917-bef4-e54b850f4f09" />
 
+```bash
 # 7. 권한 적용 후 재검증
 docker run --rm hello-world
-
 ```
+<img width="1000" height="427" alt="image" src="https://github.com/user-attachments/assets/ea6a3439-11e0-4694-adcb-8af109fbecc6" />
+
 ### 컨테이너 생성 및 실행 (`docker run`)
 | 옵션 | 설명 |
 | :--- | :--- |
@@ -52,42 +74,58 @@ docker run --rm hello-world
 | `-e` | 단일 환경변수를 `키=값` 형식으로 설정합니다. |
 | `--env-file` | 환경변수가 정의된 파일(`.env`)을 로드하여 일괄 적용합니다. |
 
-## Step 2. 이미지 다운로드 및 레지스트리 관리 (PDF 22~25쪽)
+## Step 2. 이미지 다운로드 및 레지스트리 관리 (PDF 19~21, 23쪽)
 도커 허브에 로그인하고 실습에 사용할 이미지를 준비합니다.
 
 https://hub.docker.com/
-
-<img width="50%" height="532" alt="image" src="https://github.com/user-attachments/assets/8b94fd9c-1a74-473d-af57-47265c0eb647" />
-<img width="50%" height="679" alt="image" src="https://github.com/user-attachments/assets/f3258e60-ec3c-48b7-bafd-30d916e0b9c1" />
 
 ```bash
 # 1. 도커 허브 로그인 
 # (터미널에서 바로 비밀번호를 치려면 -u 옵션과 함께 본인 아이디를 입력하세요)
 docker login -u 본인 Username
 
+```
+<img width="1000" height="141" alt="image" src="https://github.com/user-attachments/assets/7e9af7fd-4beb-47c3-8d52-65c8f70a11b2" />
+
+```bash
 # 2. 특정 버전의 Nginx 및 실습용 boanlab 이미지 다운로드
 docker pull nginx:1.21
 docker pull boanlab/hello-world:latest
+```
+<img width="1000" height="443" alt="image" src="https://github.com/user-attachments/assets/b4c9c1f7-6d84-40f4-a931-baa4b34ab784" />
 
+```bash
 # 3. 로컬에 저장된 이미지 목록 확인
 docker images
 docker images nginx # nginx 이미지만 조회
+```
+<img width="1000" height="137" alt="image" src="https://github.com/user-attachments/assets/7ba33191-a7c2-4dc3-a5ae-7bc7e7ad7d24" />
+<img width="1000" height="204" alt="image" src="https://github.com/user-attachments/assets/06e39cdd-fc7a-4cae-926a-1d74fc0209ec" />
 
+```bash
 # 4. 이미지 필터링 및 포맷팅 조회
 docker images | grep nginx #
 docker images --filter "reference=nginx:*"
 docker images --format "{{.Repository}}:{{.Tag}}"
+```
+<img width="1000" height="220" alt="image" src="https://github.com/user-attachments/assets/bd72a3f0-e3d7-40c3-9b65-640b089f8cc7" />
 
+```bash
 # 5. 이미지에 새로운 태그 부여 (버전 관리/별칭 생성)
 # 💡 팁: 'myrepo' 부분을 본인의 실제 Docker Hub 아이디로 변경하세요!
 docker tag nginx:1.21 myrepo/nginx:v1
-
+```
+```bash
 # 6. 태그된 이미지를 레지스트리에 업로드
 # 💡 팁: 위에서 본인의 아이디로 태그를 만들었다면, push 할 때도 권한 오류가 나지 않습니다.
 docker push myrepo/nginx:v1
+```
+<img width="1000" height="54" alt="image" src="https://github.com/user-attachments/assets/c767089c-ba9a-486e-b139-69caf2ded7d6" />
 
+```bash
 # 7. 이미지 레이어 구조 및 히스토리 분석
 docker history nginx:1.21
+<img width="1000" height="323" alt="image" src="https://github.com/user-attachments/assets/168add22-7d0f-48ff-a905-ce0425a3df52" />
 
 ```
 ### 이미지 조회 (`docker images`)
@@ -97,24 +135,34 @@ docker history nginx:1.21
 | `--filter` | 특정 조건(예: 미사용 이미지 등)으로 이미지를 검색합니다. |
 | `--format` | 특정 컬럼만 출력하거나 포맷을 변경합니다. |
 
-## Step 3. 웹 서버 컨테이너 구동 및 볼륨 마운트 (PDF 10, 11, 21쪽)
+## Step 3. 웹 서버 컨테이너 구동 및 볼륨 마운트 (PDF 7~8, 18쪽)
 준비된 이미지를 기반으로 컨테이너를 생성하고 호스트와 데이터를 공유합니다.
 ```bash
 
 # 1. 호스트 디렉토리 및 테스트 파일 준비 (권한 부족 시 sudo 사용)
 sudo mkdir -p /opt/hello
 sudo sh -c 'echo "Hello from the host!" > /opt/hello/test.txt'
+```
+<img width="1000" height="102" alt="image" src="https://github.com/user-attachments/assets/7ed00883-3881-4d19-989e-e1f5df596cd8" />
 
+```bash
 # 2. 컨테이너 생성 (실행 준비 프로세스 확인용)
 docker create --name web-ready nginx:1.21
+```
+<img width="1000" height="156" alt="image" src="https://github.com/user-attachments/assets/74b6a2c7-065d-47a7-9f87-9bcebe077112" />
 
+```bash
 # 3. Nginx 웹 서버 컨테이너 백그라운드 실행
 # 💡 8080 포트 충돌을 피하기 위해 8081 포트를 사용합니다.
 docker run -d --name web -p 8081:80 -v /opt/hello:/usr/share/nginx/html nginx:1.21
-
+```
+```bash
 # 4. 웹 서버 정상 동작 검증 (터미널에 'Hello from the host!'가 출력되면 성공)
 curl http://localhost:8081/test.txt
+```
+<img width="1000" height="170" alt="image" src="https://github.com/user-attachments/assets/5434d30e-a744-4bca-8aea-a23d40e80d79" />
 
+```bash
 # 5. [참고] 이미지 태깅 및 환경변수 주입 실습
 docker tag nginx:1.21 my-app:latest
 
@@ -130,8 +178,10 @@ docker run --name env-file-test --env-file .env -d my-app
 docker exec env-file-test env | grep API_KEY
 
 ```
+<img width="1004" height="360" alt="image" src="https://github.com/user-attachments/assets/9d17c1ec-ed16-4296-a798-3593c3ddeee8" />
 
-## Step 4. 상태 모니터링 및 컨테이너 내부 제어 (PDF 12 ~ 14, 18 ~ 20쪽)
+
+## Step 4. 상태 모니터링 및 컨테이너 내부 제어 (PDF 9~11, 15~17쪽)
 실행 중인 컨테이너의 상태를 점검하고 내부로 진입하여 작업을 수행합니다.
 ```bash
 
@@ -191,7 +241,7 @@ docker attach web
 | :--- | :--- |
 | `-it` | 대화형(Interactive) 터미널 환경을 할당하여 내부에 접속합니다. |
 
-## Step 5. 라이프사이클 제어 (PDF 14~16쪽)
+## Step 5. 라이프사이클 제어 (PDF 11~12쪽)
 
 구동 중인 컨테이너의 상태를 변경합니다.
 
@@ -215,7 +265,7 @@ docker restart -t 30 web
 | :--- | :--- |
 | `-t` | 종료 대기 시간(초)을 설정합니다 (기본 10초). |
 
-## Step 6. 데이터 백업 및 마이그레이션 (PDF 26, 28쪽)
+## Step 6. 데이터 백업 및 마이그레이션 (PDF 24~25쪽)
 
 현재 상태를 백업하거나 다른 환경으로 이관하기 위한 파일 추출을 진행합니다.
 
@@ -245,7 +295,7 @@ docker load -i nginx_backup.tar
 | `-o` | (`save`) 이미지를 tar 아카이브 파일로 추출합니다. |
 | `-i` | (`load`) tar 파일로부터 이미지를 도커 엔진에 로드합니다. |
 
-## Step 7. 리소스 정리 및 일괄 삭제 (PDF 16, 17, 27쪽)
+## Step 7. 리소스 정리 및 일괄 삭제 (PDF 13~14, 22쪽)
 
 실습이 완료된 후 불필요한 자원을 디스크에서 완전히 정리합니다.
 
