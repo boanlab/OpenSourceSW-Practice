@@ -57,8 +57,8 @@ docker run --rm hello-world
 
 https://hub.docker.com/
 
-<img width="1065" height="532" alt="image" src="https://github.com/user-attachments/assets/8b94fd9c-1a74-473d-af57-47265c0eb647" />
-<img width="565" height="679" alt="image" src="https://github.com/user-attachments/assets/f3258e60-ec3c-48b7-bafd-30d916e0b9c1" />
+<img width="50%" height="532" alt="image" src="https://github.com/user-attachments/assets/8b94fd9c-1a74-473d-af57-47265c0eb647" />
+<img width="50%" height="679" alt="image" src="https://github.com/user-attachments/assets/f3258e60-ec3c-48b7-bafd-30d916e0b9c1" />
 
 ```bash
 # 1. 도커 허브 로그인 
