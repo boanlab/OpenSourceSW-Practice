@@ -54,10 +54,16 @@ docker run --rm hello-world
 
 ## Step 2. 이미지 다운로드 및 레지스트리 관리 (PDF 22~25쪽)
 도커 허브에 로그인하고 실습에 사용할 이미지를 준비합니다.
+
+https://hub.docker.com/
+
+<img width="1065" height="532" alt="image" src="https://github.com/user-attachments/assets/8b94fd9c-1a74-473d-af57-47265c0eb647" />
+<img width="565" height="679" alt="image" src="https://github.com/user-attachments/assets/f3258e60-ec3c-48b7-bafd-30d916e0b9c1" />
+
 ```bash
 # 1. 도커 허브 로그인 
 # (터미널에서 바로 비밀번호를 치려면 -u 옵션과 함께 본인 아이디를 입력하세요)
-docker login -u 본인아이디
+docker login -u 본인 Username
 
 # 2. 특정 버전의 Nginx 및 실습용 boanlab 이미지 다운로드
 docker pull nginx:1.21
@@ -272,3 +278,71 @@ docker image prune -f
 | :--- | :--- |
 | `-f` | 실행 중인 컨테이너나 사용 중인 이미지를 강제로 삭제합니다. |
 | `-a` | (`image prune`) 사용되지 않는 모든 이미지를 일괄 삭제합니다. |
+
+
+## 🏆 [심화 과제] 오픈소스SW 3-Tier 동아리 블로그 사수 작전!
+
+**📝 시나리오 배경**
+우리 팀은 기말 프로젝트로 '교내 중앙동아리 연합 홍보 블로그'를 워드프레스로 구축하기로 했습니다. 트래픽 폭주에 대비해 서버를 통째로 띄우지 않고, 프론트(Nginx), 백엔드(PHP), 데이터베이스(MySQL)를 각각 분리하는 실무형 '3-Tier 아키텍처'를 적용하기로 했죠!
+
+가장 중요한 건 두 가지입니다. 
+첫째, 서버가 터지더라도 동아리들이 힘들게 올린 홍보 사진과 게시글은 절대 날아가면 안 됩니다. 
+둘째, 이번 과제의 핵심은 자동 네트워크 마법을 쓰지 않고, **우리가 직접 `inspect` 명령어로 흩어진 컨테이너들의 IP를 캐내어 수동으로 연결망을 완성하는 것**입니다!
+
+자, 배운 명령어들을 총동원해서 완벽한 분산 인프라를 조립해 봅시다!
+
+
+---
+
+### 🎯 미션 요구 사항 (Tasks)
+
+**🔥 Task 1. 데이터베이스(MySQL) 띄우고 숨겨진 IP 캐내기**
+1. 호스트(Ubuntu)에 DB 데이터를 안전하게 보관할 `/opt/team-db` 폴더를 만드세요.
+2. `mysql:8.0` 이미지를 사용해 `wp-db`라는 이름의 컨테이너를 백그라운드로 띄웁니다.
+3. 환경변수(`-e`)로 루트 비밀번호, DB 이름(`wordpress`), 유저, 패스워드를 맘대로 설정해 주세요.
+4. 호스트의 폴더를 컨테이너의 `/var/lib/mysql`에 마운트(`-v`)해서 데이터를 영구 보존하세요.
+5. 배운 `docker inspect` 명령어를 써서 방금 띄운 `wp-db`의 **내부 IP 주소**를 찾아 메모해 둡니다. (예: 172.17.0.2)
+
+**👨‍💻 Task 2. 백엔드(PHP) 띄우고 DB랑 연결하기**
+1. 동아리 웹 소스와 업로드된 사진들이 저장될 `/opt/team-web` 폴더를 호스트에 만드세요.
+2. Nginx가 쏙 빠진 순수 PHP 엔진인 `wordpress:fpm` 이미지를 사용해 `wp-php` 컨테이너를 띄웁니다.
+3. 환경변수(`-e WORDPRESS_DB_HOST=...`)에 **Task 1에서 캐낸 DB의 IP 주소**를 적어넣어, 백엔드가 DB를 찾아갈 수 있게 해주세요.
+4. 호스트의 폴더를 컨테이너의 워드프레스 설치 경로인 `/var/www/html`에 마운트합니다.
+5. 이번에도 `docker inspect`를 써서 `wp-php` 컨테이너의 **내부 IP 주소**를 찾아 메모해 둡니다. (예: 172.17.0.3)
+
+**🚀 Task 3. 프론트엔드(Nginx) 띄우고 길 안내 쪽지 쥐여주기**
+1. 호스트에 `/opt/nginx-conf` 폴더를 만들고, Nginx가 PHP에게 일을 토스할 수 있도록 아래의 **[길 안내 쪽지]**를 참고하여 `default.conf` 파일을 만드세요. (쪽지 내용 중 `fastcgi_pass` 부분에 **Task 2에서 찾은 PHP 컨테이너의 IP**를 꼭 적어줘야 합니다!)
+2. `nginx:1.21` 이미지를 사용해 `wp-web` 컨테이너를 띄웁니다. 외부 접속을 위해 포트는 `8888:80`으로 열어주세요.
+3. PHP 컨테이너와 동일한 파일을 읽을 수 있도록, `/opt/team-web` 폴더를 컨테이너의 `/var/www/html`에 마운트하세요.
+4. 방금 작성한 길 안내 쪽지(`default.conf`)를 컨테이너 내부의 `/etc/nginx/conf.d/default.conf` 경로에 마운트하여 기본 설정을 덮어씌웁니다.
+
+**💣 Task 4. 대망의 오픈 테스트 & 팀플 붕괴 시뮬레이션!**
+1. 브라우저에서 `localhost:8888`에 접속해 워드프레스 설치 화면이 정상적으로 뜨는지 확인하세요.
+2. 동아리 홍보 글을 하나 쓰고 이미지를 업로드해 봅니다.
+3. 앗, 팀원 중 한 명이 실수로 컨테이너 3개(`wp-web`, `wp-php`, `wp-db`)를 몽땅 강제 삭제(`rm -f`)해 버렸습니다!
+4. 호스트 터미널에서 `/opt/team-db`와 `/opt/team-web` 폴더를 열어보세요. 컨테이너는 날아갔지만 우리의 땀과 눈물이 담긴 데이터는 무사히 살아남았음을 확인하며 안도의 한숨을 쉬어봅시다!
+
+---
+
+### 💌 [참조] 프론트엔드(Nginx)를 위한 길 안내 쪽지 (`default.conf`)
+작업 폴더에 파일을 만들고 아래 내용을 복사해서 붙여넣으세요.
+
+```nginx
+server {
+    listen 80;
+    server_name localhost;
+    root /var/www/html;
+    index index.php index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ /index.php?$args;
+    }
+
+    location ~ \.php$ {
+        # 🚨 주의: 아래 IP 주소를 Task 2에서 메모한 PHP 컨테이너의 IP로 반드시 수정하세요!
+        fastcgi_pass <PHP_컨테이너_IP>:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+}
