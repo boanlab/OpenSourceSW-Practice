@@ -96,6 +96,14 @@ EOF
 ```
 ![figure8](./images/figure8.png)
 ---
+```bash
+# vscode에서 간단하고 쉽게 파일을 만들고 싶다면?
+```
+![vscode](./images/vscode.png)
+---
+![vscode2](./images/vscode2.png)
+---
+
 
 ```bash
 # 3. 기본 Dockerfile 작성 (레이어 최적화 및 비특권 사용자 적용)
