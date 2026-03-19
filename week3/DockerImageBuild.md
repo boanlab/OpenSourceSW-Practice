@@ -297,4 +297,4 @@ docker images | grep -E "golang|multi-app"
 
 **💣 Task 4. 빌드 및 검증 (최종 보고)**
 1. 작성한 Dockerfile을 빌드하여 이미지 크기가 획기적으로 줄어들었는지 `docker images`로 확인합니다.
-2. `docker run -it --entrypoint /bin/sh [이미지명]` 으로 접속을 시도해 보세요. Distroless의 특성상 쉘이 없어 오류가 발생하며 튕겨 나갈 것입니다. 이것이 우리가 원하던 완벽한 보안 방어선입니다!
+2. `docker run -it --entrypoint /bin/sh [이미지명]` 으로 접속을 시도해 보세요. Distroless의 특성상 쉘이 없어 오류가 발생하며 튕겨 나갈 것입니다. 이것이 우리가 원하던 완벽한 보안 방어선입니다.
