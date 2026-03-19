@@ -189,19 +189,28 @@ docker exec env-file-test env | grep API_KEY
 docker ps
 docker ps -a
 docker ps -q
+```
+<img width="1017" height="290" alt="image" src="https://github.com/user-attachments/assets/ec013bc5-dce0-4a62-a250-f17bf750371d" />
 
+```bash
 # 2. 필터링 및 테이블 형태 포맷팅 출력
 docker ps --filter "status=running" --format "table {{.ID}}\t{{.Image}}\t{{.Status}}"
+```
 
+```bash
 # 3. 컨테이너 상세 정보(JSON) 확인 및 특정 필드 추출
 docker inspect web
 docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' web
-
+```
+```bash
 # 4. 리소스 사용량 실시간 확인 (종료하려면 Ctrl+C)
 docker stats
-
+```
+```bash
 # 5. 실시간 로그 스트리밍 (종료하려면 Ctrl+C)
 docker logs -f --tail 10 --timestamps web
+```
+```bash
 
 # 6. 호스트와 컨테이너 간 파일 복사
 # 호스트 -> 컨테이너 (root가 생성한 파일이므로 sudo 필요)
@@ -211,14 +220,14 @@ docker cp web:/var/log/nginx/access.log ./access.log
 
 # 복사된 로그 파일 상태 및 크기 확인
 ls -l ./access.log #
-
+```
+```bash
 # 7. 컨테이너 접속 (선택적 실행)
 # 새로운 셸을 생성하여 내부 진입 (나올 때는 'exit' 입력)
 docker exec -it web bash
 
 # 메인 프로세스(PID 1)에 연결 (주의: Ctrl+C 입력 시 컨테이너가 종료됨)
 docker attach web
-
 ```
 ### 로그 확인 (`docker logs`)
 | 옵션 | 설명 |
@@ -274,17 +283,20 @@ docker restart -t 30 web
 # [방법 A] 컨테이너 변경사항을 새로운 이미지로 저장 (Commit)
 docker commit -m "backup" web web:backup
 docker images | grep web # 저장된 커밋 이미지 확인
+```
+```bash
 
 # [방법 B] 컨테이너 파일시스템 전체를 tar 파일로 추출 및 복원 (Export/Import)
 docker export web > web.tar
 ls -lh web.tar # 추출한 아카이브 파일 용량 확인
 cat web.tar | docker import - web:imported
+```
+```bash
 
 # [방법 C] 기존 이미지를 tar 파일로 백업 및 로드 (Save/Load)
 docker save -o nginx_backup.tar nginx:1.21
 ls -lh nginx_backup.tar # 백업 파일 크기 확인
 docker load -i nginx_backup.tar
-
 
 ```
 ### 백업, 복원 및 삭제
@@ -304,20 +316,30 @@ docker load -i nginx_backup.tar
 # 1. 단일 컨테이너 종료 (정상 종료 및 강제 종료)
 docker stop web
 docker kill web
+```
+```bash
 
 # 2. 실행 중인 모든 컨테이너 일괄 중지
 docker stop $(docker ps -a -q)
+```
+```bash
 
 # 3. 컨테이너 개별 삭제 및 강제 삭제
 docker rm web
 docker rm -f web-ready # Step 3에서 create로 만든 컨테이너 삭제
+```
+```bash
 
 # 4. 중지된 모든 컨테이너 일괄 삭제
 docker container prune -f
+```
+```bash
 
 # 5. 사용하지 않는 이미지 삭제
 # (Step 2에서 본인 아이디로 변경했다면 myrepo 부분을 수정해주세요)
 docker rmi myrepo/nginx:v1
+```
+```bash
 
 # 6. 이름 없는(Dangling) 이미지 일괄 정리
 docker image prune -f
