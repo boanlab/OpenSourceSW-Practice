@@ -271,14 +271,15 @@ kubectl get pod nginx-sidecar
 > nginx 공식 이미지는 `curl`이 없으므로 **Master 노드에서 `kubectl port-forward`** 로 트래픽을 발생시킵니다.
 
 ```bash
-# 백그라운드로 포트포워딩 (Master 노드의 8080 → 파드의 80)
-kubectl port-forward pod/nginx-sidecar 8080:80 >/dev/null 2>&1 &
+# 백그라운드로 포트포워딩 (Master 노드의 18080 → 파드의 80)
+# ※ 8080 은 다른 용도로 점유될 수 있어 18080 사용
+kubectl port-forward pod/nginx-sidecar 18080:80 >/dev/null 2>&1 &
 PF_PID=$!
 sleep 2
 
 # 트래픽 발생
-curl -s http://localhost:8080/        > /dev/null
-curl -s http://localhost:8080/index.html > /dev/null
+curl -s http://localhost:18080/        > /dev/null
+curl -s http://localhost:18080/index.html > /dev/null
 
 # 포트포워딩 종료
 kill $PF_PID 2>/dev/null
