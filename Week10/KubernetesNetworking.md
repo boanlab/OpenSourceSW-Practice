@@ -252,6 +252,7 @@ kubectl exec diff-a -- traceroute -n -m 5 $DIFF_B
 ```
 
 > 같은 노드 통신은 **홉 수가 적고**, 다른 노드 통신은 **터널(IP-in-IP) 헤더로 한 단계 더** 거치는 차이를 관찰할 수 있습니다.
+
 ![figure3-3](./images/figure3-3.png)
 
 ---
@@ -304,6 +305,7 @@ ip -d link show type veth | grep -E 'cali|link-netnsid'
 ```
 
 → 컨테이너의 `eth0@ifN` 과 호스트의 `caliXXXX@ifM` 이 서로의 N/M 을 가리키는 짝인 것을 확인할 수 있습니다.
+
 ![figure4-3](./images/figure4-3.png)
 
 ### 4. 외부 통신 SNAT (Masquerading) 검증 (PDF 6쪽)
@@ -321,6 +323,7 @@ kubectl get pod net-a -o jsonpath='{.status.podIP}{"\n"}'
 ```
 
 응답에 보이는 IP가 **Pod IP 와 다르면** SNAT 가 적용된 것입니다. (기관 네트워크 환경에서는 외부 게이트웨이 공인 IP 가 보입니다.)
+
 ![figure4-4](./images/figure4-4.png)
 
 > 외부 인터넷 접근이 차단된 환경이면 위 curl 은 타임아웃됩니다. 그래도 다음 단계의 MASQUERADE 규칙은 그대로 확인할 수 있습니다.
@@ -336,6 +339,7 @@ sudo iptables -t nat -L POSTROUTING -n | grep -E 'MASQUERADE|cali' | head
 ```
 
 `cali-nat-outgoing` 체인에 `-j MASQUERADE` 가 보이고, 매칭 조건이 "출발지가 Pod CIDR 이고 목적지가 Pod CIDR 이 아닐 때" 인 것을 확인할 수 있습니다 — 즉 클러스터 내부 통신은 NAT 안 하고, **외부로 나갈 때만 NAT** 합니다.
+
 ![figure4-5](./images/figure4-5.png)
 
 ```bash
@@ -583,6 +587,7 @@ kubectl get endpointslices -l kubernetes.io/service-name=myapp-clusterip
 ```
 
 → 출력의 IP 들이 `kubectl get pods -l app=myapp -o wide` 의 Pod IP 와 일치해야 합니다.
+
 ![figure8-3](./images/figure8-3.png)
 
 ### 4. 로드밸런싱 동작 확인 — 각 백엔드 파드에 요청이 분산되는지
