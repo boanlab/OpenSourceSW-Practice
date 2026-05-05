@@ -461,59 +461,15 @@ done
 
 ---
 
-## Step 7. LoadBalancer Service + MetalLB (PDF 18, 22쪽)
+## Step 7. LoadBalancer Service 와 그 한계 (PDF 18, 22쪽)
 
-온프레미스 환경에서는 클라우드의 LoadBalancer가 없으므로 **MetalLB** 로 대신 구현합니다.
+LoadBalancer 타입 Service 는 **클라우드 공급자(AWS/GCP) 또는 온프레미스의 MetalLB** 가 외부 IP 를 자동 할당해 줄 때만 정상 동작합니다. 본 학습 환경은 **`10.0.10.0/24` 의 모든 IP 가 학생들에게 분배** 되어 있어 MetalLB 가 사용할 수 있는 미할당 IP 풀이 없습니다. (임의 IP 사용 시 다른 학생과 ARP 충돌 → 네트워크 장애 발생)
 
-### 1. MetalLB 설치 (L2 모드)
+본 단계에서는 **LoadBalancer Service 를 그대로 적용해 보고, EXTERNAL-IP 가 영원히 `<pending>` 으로 남는 모습** 을 직접 확인해 LoadBalancer 의 한계를 학습합니다.
 
-```bash
-# strictARP 활성화 (kube-proxy 설정)
-kubectl get configmap -n kube-system kube-proxy -o yaml \
-  | sed -e "s/strictARP: false/strictARP: true/" \
-  | kubectl apply -f - -n kube-system
-kubectl rollout restart daemonset/kube-proxy -n kube-system
+### 1. LoadBalancer Service 생성 (MetalLB 없이)
 
-# MetalLB 매니페스트 적용
-kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.8/config/manifests/metallb-native.yaml
-
-# 컴포넌트 Ready 대기
-kubectl wait -n metallb-system --for=condition=ready pod \
-  --selector=app=metallb --timeout=180s
-kubectl get pods -n metallb-system
-```
-![figure7-1](./images/figure7-1.png)
-
-### 2. MetalLB IP 풀 설정 (L2 모드)
-
-> **노드와 같은 서브넷 안에서 사용 가능한 IP 범위** 를 지정해야 합니다. 현재 노드 IP 가 `10.0.10.42/63/67` 라면 같은 `/24` 안의 미사용 IP 대역을 골라주세요.
-
-```bash
-cat > metallb-pool.yaml << 'EOF'
-apiVersion: metallb.io/v1beta1
-kind: IPAddressPool
-metadata:
-  name: lab-pool
-  namespace: metallb-system
-spec:
-  addresses:
-    - 10.0.10.240-10.0.10.250   # ← 환경에 맞게 수정 (충돌 없는 미사용 대역)
----
-apiVersion: metallb.io/v1beta1
-kind: L2Advertisement
-metadata:
-  name: lab-l2adv
-  namespace: metallb-system
-spec:
-  ipAddressPools:
-    - lab-pool
-EOF
-
-kubectl apply -f metallb-pool.yaml
-```
-![figure7-2](./images/figure7-2.png)
-
-### 3. LoadBalancer Service 생성
+PDF 22쪽과 동일한 YAML 을 그대로 적용합니다.
 
 ```bash
 cat > myapp-lb.yaml << 'EOF'
@@ -531,20 +487,70 @@ spec:
 EOF
 
 kubectl apply -f myapp-lb.yaml
-sleep 5
+```
+![figure7-1](./images/figure7-1.png)
+
+### 2. `<pending>` 관찰 — 왜 IP 가 할당되지 않는가
+
+```bash
+# 30초 정도 기다려도 EXTERNAL-IP 컬럼은 영원히 <pending>
+sleep 30
 kubectl get svc myapp-lb
-# EXTERNAL-IP 에 위에서 지정한 풀 안의 IP 가 할당됨
+# 예시 출력:
+# NAME      TYPE          CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE
+# myapp-lb  LoadBalancer  10.96.x.x     <pending>     80:31xxx/TCP   30s
+```
+![figure7-2](./images/figure7-2.png)
+
+```bash
+# Events 도 비어 있음 — 할당 시도 자체가 발생하지 않음
+kubectl describe svc myapp-lb | tail -15
 ```
 ![figure7-3](./images/figure7-3.png)
 
-### 4. 외부 접근 테스트
+> **핵심 학습 포인트**
+> - 온프레미스 클러스터에 **클라우드 LB 도 MetalLB 도 없으면** EXTERNAL-IP 는 영원히 `<pending>` — Service 객체는 만들어지지만 외부 진입점이 없는 상태
+> - 단, **NodePort 는 자동으로 함께 할당** 되어 있음 (`80:31xxx/TCP`). LoadBalancer 타입은 내부적으로 ClusterIP + NodePort 를 모두 포함하기 때문
+> - 즉 **노드 IP + 31xxx 포트로는 여전히 접근 가능** — Step 6 의 NodePort 와 본질적으로 같은 동작
 
 ```bash
-LB_IP=$(kubectl get svc myapp-lb -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-echo "LB IP: $LB_IP"
-curl -s -o /dev/null -w "HTTP %{http_code}\n" http://$LB_IP
+# NodePort 부분으로는 접근 가능한 것 검증
+NP=$(kubectl get svc myapp-lb -o jsonpath='{.spec.ports[0].nodePort}')
+NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+echo "NodePort: $NP, Node IP: $NODE_IP"
+curl -s -o /dev/null -w "HTTP %{http_code}\n" http://$NODE_IP:$NP
+# HTTP 200 — EXTERNAL-IP 가 pending 이어도 NodePort 경유는 정상
 ```
 ![figure7-4](./images/figure7-4.png)
+
+### 3. (참고) 실제 운영 환경에서의 절차 — 본 실습에서는 실행하지 마세요
+
+운영 환경에서 MetalLB 와 함께 사용할 때의 절차는 다음과 같습니다. **본 실습 환경에서는 IP 풀 충돌 위험이 있어 실행하지 않습니다.** 졸업 후 자기 전용 클러스터에서 학습하실 때 참고하세요.
+
+```bash
+# (참고용 — 본 실습에서는 절대 실행 금지)
+#
+# # 1) MetalLB 설치
+# kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.8/config/manifests/metallb-native.yaml
+#
+# # 2) 사용 가능한 IP 풀 등록 (노드와 같은 L2 서브넷의 미사용 대역)
+# cat <<EOF | kubectl apply -f -
+# apiVersion: metallb.io/v1beta1
+# kind: IPAddressPool
+# metadata: { name: lab-pool, namespace: metallb-system }
+# spec: { addresses: ["10.0.10.240-10.0.10.250"] }   # ← 비어 있어야 함
+# ---
+# apiVersion: metallb.io/v1beta1
+# kind: L2Advertisement
+# metadata: { name: lab-l2adv, namespace: metallb-system }
+# spec: { ipAddressPools: [lab-pool] }
+# EOF
+#
+# # 3) 풀 등록 후 myapp-lb 의 EXTERNAL-IP 가 자동으로 채워지고
+# # curl http://<EXTERNAL-IP> 가 HTTP 200 응답
+```
+
+> 클라우드(AWS ELB, GCP NLB 등) 환경에서는 위 1~2 단계 없이 곧바로 EXTERNAL-IP 가 자동 할당됩니다 (클라우드 LB 컨트롤러가 그 역할을 함).
 
 ---
 
@@ -833,9 +839,8 @@ kubectl get ippool -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.ip
 kubectl delete -f netpol-deny.yaml --ignore-not-found
 kubectl delete pod trusted-client --ignore-not-found
 
-# Step 7 LoadBalancer 와 MetalLB IP 풀
+# Step 7 LoadBalancer Service (MetalLB 는 본 실습에서 설치 안 했음)
 kubectl delete -f myapp-lb.yaml --ignore-not-found
-kubectl delete -f metallb-pool.yaml --ignore-not-found
 
 # Step 6 NodePort
 kubectl delete -f myapp-nodeport.yaml --ignore-not-found
@@ -850,7 +855,7 @@ kubectl delete -f localhost-test.yaml --ignore-not-found
 ```
 
 ```bash
-# (선택) MetalLB 자체를 제거하고 싶다면
+# (참고) 운영 환경에서 MetalLB 를 설치했다면 다음 명령으로 제거 — 본 실습에선 설치 안 했으므로 해당 없음
 # kubectl delete -f https://raw.githubusercontent.com/metallb/metallb/v0.14.8/config/manifests/metallb-native.yaml
 ```
 ![figure13-1](./images/figure13-1.png)
@@ -864,8 +869,7 @@ kubectl delete -f localhost-test.yaml --ignore-not-found
 | 파드 간 ping 실패 (다른 노드) | Calico tunl0 인터페이스 비정상 / BGP 미연결 → `calicoctl node status` 로 Established 확인 |
 | ClusterIP 로 접근 시 연결 안 됨 | Service `selector` 와 Pod `labels` 불일치 → `kubectl describe svc` 의 Endpoints 가 `<none>` 인지 확인 |
 | NodePort 외부 접근 실패 | 노드 방화벽이 30000~32767 차단 → 클라우드 보안그룹 / `ufw` 설정 확인 |
-| LoadBalancer EXTERNAL-IP 가 `<pending>` | MetalLB 미설치 / IPAddressPool 미생성 / 설정한 IP 대역이 노드와 다른 서브넷 |
-| MetalLB 가 IP를 할당해도 접근 불가 | `strictARP: true` 미적용 → kube-proxy ConfigMap 수정 후 재시작 필요 |
+| LoadBalancer EXTERNAL-IP 가 `<pending>` | **본 실습 환경에서는 의도된 동작** — 클라우드 LB / MetalLB 미설치 시 정상 (Step 7 의 학습 포인트). 그래도 NodePort 부분은 정상 동작 |
 | NetworkPolicy 가 적용 안 됨 | CNI 가 NetworkPolicy 를 지원하는지 확인 (Calico/Cilium ✓, 기본 Flannel ✗) |
 | Pod CIDR 블록이 `kubectl get nodes` 에 비어 있음 | Calico 는 자체 IPAM 사용 → `kubectl get ipamblock` 로 확인 |
 | `traceroute` 가 모든 hop 에 `* * *` | ICMP TTL exceeded 가 차단됨 (정상 동작에 영향 없음) |
