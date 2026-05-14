@@ -18,7 +18,7 @@
 | **8주차** | [쿠버네티스 플랫폼](./Week8/KubernetesPlatform.md) |
 | **9주차** | [쿠버네티스 워크로드 개요 및 관리 전략](./Week9/KubernetesWorkload.md) |
 | **10주차** | [쿠버네티스 네트워킹](./Week10/KubernetesNetworking.md) |
-| **11주차** | 스토리지 생성 및 관리 |
+| **11주차** | [쿠버네티스 스토리지](./Week11/KubernetesStorage.md) |
 | **12주차** | 쿠버네티스 및 워크로드 분석 |
 | **13주차** | 쿠버네티스 및 워크로드 보안 |
 | **14주차** | - |
